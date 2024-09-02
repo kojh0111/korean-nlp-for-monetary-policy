@@ -97,3 +97,21 @@ AUTOTHROTTLE_ENABLED = True
 AUTOTHROTTLE_START_DELAY = 5
 AUTOTHROTTLE_MAX_DELAY = 60
 AUTOTHROTTLE_TARGET_CONCURRENCY = 1.0
+
+# Twisted reactor thread pool
+REACTOR_THREADPOOL_MAXSIZE = 16  # 스레드 풀 최대 크기
+
+# Memory management
+DEPTH_PRIORITY = 1  # 깊이 우선 탐색 (메모리 효율 개선)
+SCHEDULER_DISK_QUEUE = 'scrapy.squeues.PickleLifoDiskQueue'
+SCHEDULER_MEMORY_QUEUE = 'scrapy.squeues.LifoMemoryQueue'
+
+# Caching
+HTTPCACHE_ENABLED = True
+HTTPCACHE_EXPIRATION_SECS = 0  # Never expire
+HTTPCACHE_DIR = 'httpcache'
+HTTPCACHE_IGNORE_HTTP_CODES = []
+HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
+
+# Logging (reduce verbosity to improve performance)
+LOG_LEVEL = 'INFO'

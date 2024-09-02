@@ -29,6 +29,7 @@ requests==2.32.3
 requests-file==2.1.0
 Scrapy==2.11.2
 scrapyd==1.4.3
+scrapyd-client==1.2.3
 service-identity==24.1.0
 setuptools==74.0.0
 soupsieve==2.6

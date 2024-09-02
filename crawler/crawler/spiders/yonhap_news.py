@@ -89,13 +89,35 @@ class YonhapNewsSpider(Spider):
 
     def parse_news(self, response):
         if response.status == 200:
-            item = YonhapNewsItem()
-            item["title"] = response.xpath("//h2[@id='title_area']/span/text()").get()
-            item["press"] = response.xpath("//*[contains(@class, 'media_end_head_top_logo_img')]/@alt").get()
-            item["content"] = " ".join([' '.join(c.split()).strip() for c in response.xpath("//article//text()").getall()]).strip()
-            item["reg_date"] = datetime.strptime(response.xpath("//span[contains(@class, 'media_end_head_info_datestamp_time')]/@data-date-time").get(), "%Y-%m-%d %H:%M:%S")
-            item["category"] = {k: v for k, v in parse_qs(urlparse(response.url).query).items()}.get("sid", ["no category"])[0]
-            item["url"] = response.url
-            yield item
+            if "entertain.naver.com" in response.url:
+                entertain_url = response.url.replace("m.entertain.naver.com", "api-gw.entertain.naver.com/news")
+                yield Request(entertain_url, callback=self.parse_news_by_json, meta={"url": response.url})
+            elif "sports.naver.com" in response.url:
+                sports_url = f'https://api-gw.sports.naver.com/news/article{response.url.split("article")[1]}'
+                self.logger.info(f"Requesting sports news URL: {sports_url}")
+                yield Request(sports_url, callback=self.parse_news_by_json, meta={"url": response.url})
+            elif "news.naver.com" in response.url:
+                item = YonhapNewsItem()
+                item["title"] = response.xpath("//h2[@id='title_area']/span/text()").get()
+                # item["press"] = response.xpath("//*[contains(@class, 'media_end_head_top_logo_img')]/@alt").get()
+                item["press"] = "연합뉴스"
+                item["content"] = " ".join([' '.join(c.split()).strip() for c in response.xpath("//article//text()").getall()]).strip()
+                item["reg_date"] = datetime.strptime(response.xpath("//span[contains(@class, 'media_end_head_info_datestamp_time')]/@data-date-time").get(), "%Y-%m-%d %H:%M:%S")
+                item["category"] = {k: v for k, v in parse_qs(urlparse(response.url).query).items()}.get("sid", ["no category"])[0]
+                item["url"] = response.url
+                yield item
         else:
             self.logger.error(f"Failed to fetch {response.url}: HTTP status code {response.status}")
+
+    def parse_news_by_json(self, response):
+        data = json.loads(response.text)
+        item = YonhapNewsItem()
+        item["title"] = data.get("result", dict()).get("articleInfo", dict()).get("article", dict()).get("title", "no title")
+        # item["press"] = data.get("result", dict()).get("officeInfo", dict()).get("hname", "no press")
+        item["press"] = "연합뉴스"
+        item["content"] = data.get("result", dict()).get("articleInfo", dict()).get("article", dict()).get("refinedContent", "no content")
+        item["reg_date"] = datetime.strptime(data.get("result", dict()).get("articleInfo", dict()).get("article", dict()).get("serviceDatetime", "no date"), "%Y-%m-%d %H:%M:%S") if data.get("result", dict()).get("articleInfo", dict()).get("article", dict()).get("serviceDatetime") else "no date"
+        item["category"] = "106" if "entertain" in response.url else "107" if "sports" in response.url else "no category"
+        item["url"] = response.meta["url"]
+
+        yield item
