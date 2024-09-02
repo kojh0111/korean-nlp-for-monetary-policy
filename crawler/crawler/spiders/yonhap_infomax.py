@@ -57,7 +57,7 @@ class YonhapInfomaxSpider(Spider):
         return f"https://search.naver.com/search.naver?where=news&query={self.keyword}&sm=tab_opt&sort=1&photo=0&field=0&pd=3&ds={start_str}&de={end_str}&docid=&related=0&mynews=1&office_type=2&office_section_code=8&news_office_checked=2227&nso=so%3Add%2Cp%3Afrom{start_str.replace('.', '')}to{end_str.replace('.', '')}&is_sug_officeid=0&office_category=0&service_area=0"
 
     def parse(self, response):
-        for news in response.xpath("//ul[contains(@class, 'list_news')]//li//*[contains(@class, 'info_group')]//a[contains(@class, 'press')]/@href").getall():
+        for news in response.xpath("//ul[contains(@class, 'list_news')]//li//*[contains(@class, 'news_contents')]//a[contains(@class, 'news_tit')]/@href").getall():
             yield Request(news, callback=self.parse_news)
 
         start_date = response.meta['start_date']
@@ -76,7 +76,7 @@ class YonhapInfomaxSpider(Spider):
 
         for news_html in contents:
             soup = BeautifulSoup(news_html, 'html.parser')
-            news_url = soup.select_one('.info_group a.press')
+            news_url = soup.select_one('.news_contents a.news_tit')
 
             if news_url.get('href'):
                 yield Request(news_url['href'], callback=self.parse_news)
@@ -89,10 +89,11 @@ class YonhapInfomaxSpider(Spider):
     def parse_news(self, response):
         if response.status == 200:
             item = YonhapNewsItem()
-            item["title"] = response.xpath('//h3[@class="heading"]').get()
+            item["title"] = response.xpath('//h3[@class="heading"]/text()').get()
             item["press"] = "연합인포맥스"
-            item["content"] = " ".join([' '.join(c.split()).strip() for c in response.xpath("//article[id='article-view-content-div']//text()").getall()]).strip()
-            item["reg_date"] = datetime.strptime(response.xpath("//article[1]/ul/li[2]/text()").get().strip().removeprefix("입력").strip(), "%Y.%m.%d %H:%M")
+            item["content"] = " ".join([' '.join(c.split()).strip() for c in response.xpath("//article[@id='article-view-content-div']//text()").getall()]).strip()
+            reg_date = response.xpath("//article[1]/ul/li[2]/text()").get() if response.xpath("//article[1]/ul/li[2]/text()").get() else "1900.01.01 00:00"
+            item["reg_date"] = datetime.strptime(reg_date.strip().removeprefix("입력").strip(), "%Y.%m.%d %H:%M")
             item["category"] = {k: v for k, v in parse_qs(urlparse(response.xpath('//*[@id="article-view"]/div/header/nav/ul/li[2]/a/@href').get()).query).items()}.get("sc_section_code", ["no category"])[0]
             item["url"] = response.url
             yield item
