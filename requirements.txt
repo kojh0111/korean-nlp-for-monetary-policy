@@ -23,6 +23,9 @@ pyasn1==0.6.0
 pyasn1_modules==0.4.0
 pycparser==2.22
 PyDispatcher==2.0.7
+pymysql
+konlpy
+kss
 pyOpenSSL==24.2.1
 queuelib==1.7.0
 requests==2.32.3
@@ -40,3 +43,5 @@ uberegg==0.1.1
 urllib3==2.2.2
 w3lib==2.2.1
 zope.interface==7.0.3
+gensim
+
