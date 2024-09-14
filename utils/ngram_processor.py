@@ -1,19 +1,35 @@
 from collections import Counter
 
+from ekonlpy.tag import Mecab
 
-def _generate_ngrams(text, n):
-    words = text.split()
-    return [" ".join(words[i : i + n]) for i in range(len(words) - n + 1)]
+
+def _extract_nouns_from_sentences(sentences):
+    mecab = Mecab()
+    processed_sentences = []
+    target_pos = ["NNG", "NNP", "VA", "VAX", "VV", "VCN"]
+
+    for sentence in sentences:
+        tokens = mecab.pos(sentence)
+        tokens = mecab.replace_synonyms(tokens)
+        tokens = mecab.lemmatize(tokens)
+
+        filtered_tokens = [word for word, pos, *_ in tokens if pos in target_pos]
+        processed_sentences.append(filtered_tokens)
+
+    return processed_sentences
+
+
+def _generate_ngrams(tokens, n):
+    return [" ".join(tokens[i : i + n]) for i in range(len(tokens) - n + 1)]
 
 
 def _process_ngrams_to_dict(sentences):
-    ngram_counts = {
-        i: Counter() for i in range(1, 6)
-    }  # 1-gram부터 5-gram까지의 Counter 객체
+    ngram_counts = {i: Counter() for i in range(1, 6)}
+    processed_sentences = _extract_nouns_from_sentences(sentences)
 
-    for sentence in sentences:
+    for tokens in processed_sentences:
         for n in range(1, 6):
-            ngrams = _generate_ngrams(sentence, n)
+            ngrams = _generate_ngrams(tokens, n)
             ngram_counts[n].update(ngrams)
 
     return ngram_counts
