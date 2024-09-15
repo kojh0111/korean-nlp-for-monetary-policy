@@ -25,7 +25,6 @@ pycparser==2.22
 PyDispatcher==2.0.7
 pymysql~=1.1.1
 konlpy
-kss
 pyOpenSSL==24.2.1
 queuelib==1.7.0
 requests==2.32.3
