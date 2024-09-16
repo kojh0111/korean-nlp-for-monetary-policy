@@ -68,40 +68,6 @@ def convert_to_datetime(df):
     return df
 
 
-
-# 2. 다운로드 파일에 저장하기
-df = pd.read_csv('bok_news_conference_data_dlinkonly.csv', encoding='utf-8-sig')
-
-# TODO: 함수화
-driver = webdriver.Chrome()
-
-for url in df['news_conf_dlink']:
-    driver.get(url)
-
-time.sleep(20)
-
-driver.quit()
-
-
-# TODO: 함수화
-# 3. filename 리스트 만들기
-path = "C:/Users/kwkwo/Downloads/"
-all_filenames = os.listdir(path)
-hwp_files = []
-
-for filename in all_filenames:
-    if filename[-4:] == ".hwp":
-        hwp_files.append(filename)
-
-
-# 4. 문장 추출하기
-# TODO: 함수화
-# 다운로드 폴더 경로 (Windows에서는 기본적으로 사용자 폴더에 있음)
-download_folder = os.path.join(os.path.expanduser("~"), "Downloads")
-
-# .hwp 파일 목록 가져오기
-hwp_files = [os.path.join(download_folder, f) for f in os.listdir(download_folder) if f.endswith('.hwp')]
-
 def get_hwp_text(filename):
     f = olefile.OleFileIO(filename)
     dirs = f.listdir()
@@ -155,6 +121,7 @@ def get_hwp_text(filename):
 
     return text
 
+
 def extract_sentences(text):
     # Updated pattern to capture sentences starting with '□' and ending at common delimiters
     pattern = r'(?:□\s)(.*?)(?=\s□|\r|$)'
@@ -176,6 +143,7 @@ def extract_sentences(text):
 
     return split_sentences
 
+
 def extract_sentence(text):
     # 정규 표현식을 사용하여 [ 실물경제 ]\r\n□과 氠瑢 사이의 문장을 추출
     pattern = r'\[ 실물경제 \]\r\n□(.*?)氠瑢'
@@ -192,42 +160,70 @@ def extract_sentence(text):
 
     return None
 
-# TODO: 함수화
-original_texts = []
-contents = []
 
-for hwp in hwp_files:
-    text = get_hwp_text(hwp)
-    original_texts.append(text)
-    result = extract_sentence(text)
-    if result in original_texts:
-        contents.append(result)
-    contents.append(extract_sentences(text))
+if __name__ == '__main__':
+    # 크롤링 실행
+    data = get_bok_news_conference_data(2009, 5, 2018, 1)
+    df = pd.DataFrame(data, columns=['year', 'day', 'title', 'news_conf_dlink'])
 
+    # 날짜 데이터 변환
+    df = convert_to_datetime(df)
 
-
-# TODO: 함수화
-# 크롤링 실행
-data = get_bok_news_conference_data(2009, 5, 2018, 1)
-df = pd.DataFrame(data, columns=['year', 'day', 'title', 'news_conf_dlink'])
-
-# 날짜 데이터 변환
-df = convert_to_datetime(df)
-
-# CSV 파일로 저장
-df.to_csv('bok_news_conference_data_dlinkonly.csv', index=False, encoding='utf-8-sig')
-
-# 5. 문장 개수 확인
-
-df['content'] = contents
-df['sent-no'] = [len(sentences) for sentences in contents]
-
-# Calculate the total number of sentences across all HWP files
-total_sentences = df['sent-no'].sum()
-
-# Print the total number of sentences
-print("Total number of sentences:", total_sentences)
+    # CSV 파일로 저장
+    df.to_csv('bok_news_conference_data_dlinkonly.csv', index=False, encoding='utf-8-sig')
 
 
-# 6. csv 파일로 저장
-df.to_csv('bok_news_conference_data.csv', index=False)
+    # 2. 다운로드 파일에 저장하기
+    df = pd.read_csv('bok_news_conference_data_dlinkonly.csv', encoding='utf-8-sig')
+
+    driver = webdriver.Chrome()
+
+    for url in df['news_conf_dlink']:
+        driver.get(url)
+
+    time.sleep(20)
+
+    driver.quit()
+
+    # 3. filename 리스트 만들기
+    path = "C:/Users/kwkwo/Downloads/"
+    all_filenames = os.listdir(path)
+    hwp_files = []
+
+    for filename in all_filenames:
+        if filename[-4:] == ".hwp":
+            hwp_files.append(filename)
+
+
+    # 4. 문장 추출하기
+    # 다운로드 폴더 경로 (Windows에서는 기본적으로 사용자 폴더에 있음)
+    download_folder = os.path.join(os.path.expanduser("~"), "Downloads")
+
+    # .hwp 파일 목록 가져오기
+    hwp_files = [os.path.join(download_folder, f) for f in os.listdir(download_folder) if f.endswith('.hwp')]
+
+    original_texts = []
+    contents = []
+
+    for hwp in hwp_files:
+        text = get_hwp_text(hwp)
+        original_texts.append(text)
+        result = extract_sentence(text)
+        if result in original_texts:
+            contents.append(result)
+        contents.append(extract_sentences(text))
+
+    # 5. 문장 개수 확인
+
+    df['content'] = contents
+    df['sent-no'] = [len(sentences) for sentences in contents]
+
+    # Calculate the total number of sentences across all HWP files
+    total_sentences = df['sent-no'].sum()
+
+    # Print the total number of sentences
+    print("Total number of sentences:", total_sentences)
+
+
+    # 6. csv 파일로 저장
+    df.to_csv('bok_news_conference_data.csv', index=False)
