@@ -9,13 +9,47 @@ def _extract_nouns_from_sentences(sentences):
     mecab = Mecab()
     processed_sentences = []
     target_pos = ["NNG", "NNP", "VA", "VAX", "VV", "VCN"]
+    stopwords = [
+        "층",
+        "늘",
+        "년",
+        "후",
+        "장",
+        "축",
+        "더",
+        "반",
+        "면",
+        "리라",
+        "n",
+        "우",
+        "마산",
+        "가",
+        "를",
+        "을",
+        "점",
+        "관",
+        "월",
+        "일",
+        "텔",
+        "남",
+        "좌",
+        "리",
+        "중",
+        "정",
+        "미",
+        "종",
+    ]
 
     for sentence in sentences:
         tokens = mecab.pos(sentence)
         tokens = mecab.replace_synonyms(tokens)
         tokens = mecab.lemmatize(tokens)
 
-        filtered_tokens = [word for word, pos, *_ in tokens if pos in target_pos]
+        filtered_tokens = [
+            word
+            for word, pos, *_ in tokens
+            if (pos in target_pos) and (word not in stopwords)
+        ]
         processed_sentences.append(filtered_tokens)
 
     return processed_sentences
