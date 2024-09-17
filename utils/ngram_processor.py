@@ -1,6 +1,8 @@
 from collections import Counter
 
 from ekonlpy.tag import Mecab
+from nltk import ngrams
+from tqdm import tqdm
 
 
 def _extract_nouns_from_sentences(sentences):
@@ -20,7 +22,7 @@ def _extract_nouns_from_sentences(sentences):
 
 
 def _generate_ngrams(tokens, n):
-    return [" ".join(tokens[i : i + n]) for i in range(len(tokens) - n + 1)]
+    return list(ngrams(tokens, n))
 
 
 def _process_ngrams_to_dict(sentences):
@@ -29,8 +31,8 @@ def _process_ngrams_to_dict(sentences):
 
     for tokens in processed_sentences:
         for n in range(1, 6):
-            ngrams = _generate_ngrams(tokens, n)
-            ngram_counts[n].update(ngrams)
+            ngrams_list = _generate_ngrams(tokens, n)
+            ngram_counts[n].update(" ".join(gram) for gram in ngrams_list)
 
     return ngram_counts
 
@@ -58,7 +60,9 @@ def _update_ngram_dict(row, sentences_column, ngram_column, total_counts):
 
 def process_dataframe(df, sentences_column, ngram_column):
     total_counts = {f"{i}-gram": Counter() for i in range(1, 6)}
-    df = df.apply(
+
+    tqdm.pandas(desc="Processing rows")
+    df = df.progress_apply(
         lambda row: _update_ngram_dict(
             row, sentences_column, ngram_column, total_counts
         ),
