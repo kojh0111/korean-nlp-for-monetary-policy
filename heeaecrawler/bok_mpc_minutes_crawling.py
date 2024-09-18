@@ -205,11 +205,20 @@ if __name__ == '__main__':
     for content in extracted_contents:
         sentences = content.split('\r\n')
         sents_as_list = []
+        
         for sent in sentences:
             sent = sent.strip()
-            if sent != "(３) 위원 토의내용":
-                if sent != '':
-                    sents_as_list.append(sent)
+            
+            # 소수점 숫자가 아닌 마침표(.)나 세미콜론(;) 기준으로 분리
+            split_sentences = re.split(r'(?<!\d)\.(?!\d)|;', sent)
+            
+            for split_sent in split_sentences:
+                split_sent = split_sent.strip()
+                
+                # "(３) 위원 토의내용" 제외
+                if split_sent and split_sent != "(３) 위원 토의내용":
+                    sents_as_list.append(split_sent)
+        
         content_as_list.append(sents_as_list)
         sent_no.append(len(sents_as_list))
 
@@ -217,4 +226,6 @@ if __name__ == '__main__':
     df['sent-no'] = sent_no
 
     # 5. csv 파일로 저장
-    df.to_csv('bok_mpc_minutes_data.csv', index=False)    
+    df.to_csv('bok_mpc_minutes_data(edited).csv')
+    
+
